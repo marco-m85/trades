@@ -1,31 +1,47 @@
-# Sistema intraday (prototipo)
+# Intraday Paper Lab
 
-Questo repository non contiene il file o la documentazione del **“day trade main skill”** menzionato nella richiesta: al momento c'era solo un README minimale. Perciò ho aggiunto un prototipo autonomo basato su una strategia esplicita e sostituibile, senza attribuirla a quel materiale: **breakout dell'opening range**.
+Prototipo educativo di backtest multi-asset e paper trading. Non invia ordini reali. Il repository non contiene il “day trade main skill”: la strategia qui implementata è un esempio trasparente, non una traduzione di una skill mancante.
 
-## Cosa fa
+## Strategia e filtri
 
-- Legge barre OHLCV da CSV.
-- Calcola il massimo/minimo dei primi 15 minuti dalla sessione indicata.
-- Conferma un breakout alla chiusura della barra e simula l'ingresso a quel prezzo.
-- Imposta stop sull'estremo opposto dell'opening range e target predefinito a 2R.
-- Dimensiona la posizione con rischio predefinito dello 0,5% dell'equity, esposizione massima 100%, limite perdita giornaliera 2% e un trade per sessione.
-- Applica commissioni e slippage configurabili; se stop e target sono entrambi toccati nella stessa barra, assume lo stop (ipotesi conservativa).
-- Chiude le posizioni entro la fine dei dati della sessione e produce riepilogo e log CSV.
+Breakout dell'opening range, confermato da EMA veloce/lenta, prezzo dal lato coerente del VWAP intraday e volume almeno pari alla media recente. Il filtro ATR esclude sessioni sotto/sopra le soglie ATR% e opening range troppo piccolo/grande rispetto all'ATR. Parametri indicatori: ATR 14, EMA 9/21 e media volume 20 barre. Stop sul bordo opposto dell'opening range; target predefinito 2R. Al massimo un trade per asset e giornata. Se una barra tocca sia stop sia target, il backtest assume stop (conservativo).
 
-## Avvio
+Il CSV accetta `timestamp,open,high,low,close` e colonne opzionali `volume,symbol`; senza `symbol` usa DEFAULT. Timestamp ISO 8601 coerenti col fuso orario della borsa. Esempio: `2026-01-05T09:30:00`. Per più asset, ripeti le barre con il rispettivo symbol. Il capitale viene allocato in parti uguali a sotto-conti indipendenti per asset; ciascuno ha il rischio per trade e il limite giornaliero configurati.
 
-Richiede Python 3.10+ e non ha dipendenze esterne.
+## Backtest
+
+Python 3.10+:
 
 ```bash
-python daytrade.py dati.csv --cash 10000 --open 09:30 --range-minutes 15 --output trades.csv
+python daytrade.py sample.csv --cash 10000 --open 09:30 --range-minutes 15 --output trades.csv
 ```
 
-Il CSV deve avere intestazioni `timestamp,open,high,low,close` e può includere `volume`. I timestamp devono essere ISO 8601 coerenti con il fuso orario della borsa, ad esempio `2026-01-05T09:30:00`. Usa barre intraday ordinate, senza duplicati e con una convenzione temporale coerente. L'orario di apertura va impostato sul mercato e sui dati usati.
+## Dashboard performance
 
-Parametri principali: `--risk 0.005`, `--daily-loss 0.02`, `--target-r 2`, `--max-exposure 1`, `--fee-bps 1`, `--slippage-bps 1`, `--long-only`.
+```bash
+pip install -r requirements.txt
+streamlit run dashboard.py
+```
 
-## Limiti importanti
+Carica CSV e visualizza equity curve, PnL per asset, distribuzione dei risultati, statistiche e trade log esportabile.
 
-È solo un **backtester su CSV**, non invia ordini e non integra broker o feed dati. I risultati storici non prevedono rendimenti futuri; spread, liquidità, gap, tasse, fusi orari, split e qualità dei dati possono cambiare radicalmente l'esito. Prima di considerare qualsiasi uso reale servono validazione indipendente, test out-of-sample, gestione dei dati e dei rischi specifici del mercato, oltre a paper trading. Non è consulenza finanziaria.
+## Feed HTTP e broker simulato
 
-Per implementare fedelmente il “day trade main skill”, aggiungi o indica il file/contenuto della skill e i mercati, timeframe, orari e regole operative desiderati.
+`live_paper.py` interroga un endpoint HTTP configurato dall'utente, senza dipendere da un provider specifico. L'endpoint deve restituire candele completate nel formato:
+
+```json
+{"bars":[{"symbol":"XYZ","timestamp":"2026-01-05T09:30:00","open":100,"high":101,"low":99,"close":100.5,"volume":1200}]}
+```
+
+Esempio:
+
+```bash
+export FEED_TOKEN='token-del-provider'
+python live_paper.py --url 'https://provider.example/api/bars' --token-env FEED_TOKEN --interval 15
+```
+
+Usa `--once` per un singolo polling. Il runner riprocessa la storia ricevuta e registra nel ledger locale solo trade chiusi; il ledger è in memoria e si azzera al riavvio. Il feed deve fornire barre coerenti, completate e in orario exchange. Il client è generico: va adattato allo schema, autenticazione, rate limits e licenza del provider. Non è un feed incluso.
+
+## Rischi e limiti
+
+Solo ricerca storica e paper simulation: non c'è integrazione con broker, invio ordini, gestione di posizioni live o garanzia di esecuzione. Il backtest è sensibile a dati, fuso orario, spread, gap, liquidità, corporate actions e ipotesi di slippage. Controlla la qualità delle barre, testa out-of-sample e fai paper trading prima di qualunque valutazione ulteriore. Performance passate non predicono risultati futuri; non è consulenza finanziaria. Il feed live non rende il sistema adatto al trading reale.
