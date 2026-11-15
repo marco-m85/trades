@@ -53,6 +53,7 @@ When changing strategy or execution simulation:
 - Model spread, fees, slippage, gaps, partial fills, liquidity/participation limits, and conservative OHLC intrabar ambiguity where relevant. Do not claim OHLC bars can reproduce queue priority or actual fills.
 - Never use a signal candle's earlier high/low to trigger a post-close entry's exit. If stop and target both appear touched in one bar and finer data is unavailable, choose the adverse outcome or report ambiguity.
 - Bound retries and polling; use timeouts, backoff, deduplication, idempotency, and observable error states.
+- For stop/target/breakeven behavior, follow `strategy-intraday.md`. The proposed 10% interpretation is +0.1R of initial risk, not 10% of notional; make it configurable and clarify ambiguity.
 
 ### B. Portfolio risk management
 
@@ -82,7 +83,7 @@ Use an evidence-first research loop:
 
 ### D. ML / LLM evolution (“evoluzione di LM”)
 
-Interpret requests to evolve an LM/LLM/ML strategy as controlled research assistance, not self-modifying autonomous trading.
+Interpret requests to evolve an LM/LLM/ML strategy as controlled research assistance, not self-modifying autonomous trading. Follow `ml-feature-engineering.md`.
 
 - An LLM can explain code, draft hypotheses, annotate events, or summarize completed experiments. Its output is untrusted text, not an order or risk-control input.
 - Do not give an LLM broker credentials, unrestricted network tools, direct execution tools, or authority to change risk limits, approve its own model, or deploy itself.
@@ -94,7 +95,7 @@ Interpret requests to evolve an LM/LLM/ML strategy as controlled research assist
 
 ### E. Broker APIs and data providers
 
-Broker/data-provider integration means **paper/sandbox API adapters only**:
+Broker/data-provider integration means **paper/sandbox API adapters only**; follow `broker-sandbox.md`.
 
 - First verify the provider's current official API docs and confirm the requested endpoint is a paper/sandbox endpoint. If that cannot be confirmed, implement a local mock interface and ask for the official documentation; do not guess endpoints.
 - Keep market data and order-simulation interfaces separate. Use typed internal models for quote/bar, account snapshot, order intent, simulated order state, and fill. Validate provider payloads before converting.
@@ -107,7 +108,7 @@ Broker/data-provider integration means **paper/sandbox API adapters only**:
 
 ### F. Charts and dashboard
 
-For dashboard work:
+For dashboard work, follow `dashboard.md`:
 
 - Distinguish realized equity from mark-to-market equity and label the chosen calculation. Include drawdown, per-symbol and per-day breakdowns, trade distribution, exposure, costs, and benchmark where available.
 - Use chronological time axes and consistent timezone labels. Do not connect missing sessions as if continuous without explanation.
@@ -115,67 +116,28 @@ For dashboard work:
 - Validate empty data, no trades, one trade, missing symbols, malformed values, and large uploads. Avoid executing user-uploaded code or writing uploads unnecessarily.
 - Charts are descriptive interfaces, not recommendations. Provide downloadable results without secrets or unnecessary personal data.
 
+### G. App or Expert Advisor
+
+Use `app-vs-expert-advisor.md`. For the current Python multi-asset quant, ML, risk and dashboard scope, recommend a Python application first. Consider a separate MetaTrader EA only if MT4/MT5 is a confirmed platform requirement; keep it in tester/demo and never implement live execution under this skill.
+
 ## Required workflow and checklist
 
-Use this checklist for every non-trivial task. State N/A where not applicable.
-
-### 1. Understand
-- [ ] Restate request and identify code/docs/tests to inspect.
-- [ ] Identify whether it concerns strategy, data, risk, ML/LLM, broker sandbox, dashboard, or docs.
-- [ ] Clarify assumptions from repository context; ask one concise question only when essential information cannot be discovered.
-- [ ] Confirm scope remains research/paper-only.
-
-### 2. Plan
-- [ ] Define acceptance criteria and failure behavior.
-- [ ] Identify data flow, state, time semantics, dependencies, and security-sensitive configuration.
-- [ ] Identify risk of look-ahead, portfolio over-allocation, duplicate processing, and stale data.
-- [ ] Keep changes minimal and outline files to touch.
-
-### 3. Implement
-- [ ] Add validation and explicit configuration; reject unsupported cases.
-- [ ] Keep strategy, risk, adapter, persistence, and UI concerns separated.
-- [ ] Preserve paper-only boundary and no-secret policy.
-- [ ] Update user docs and examples; use placeholders, never real keys.
-
-### 4. Test
-- [ ] Run relevant existing tests and targeted new tests.
-- [ ] Test normal, empty, malformed, boundary, duplicate, stale, and failure cases.
-- [ ] Test long/short and stop-target ambiguity for strategy/backtest changes.
-- [ ] Test multi-asset total-capital and aggregate-risk invariants for portfolio changes.
-- [ ] Test sandbox refusal, secret redaction, idempotency, timeouts, and provider error handling for adapter changes.
-- [ ] Test dashboard empty/no-trade and timezone behavior for UI changes.
-- [ ] Run formatter/linter/type checks only if configured; report exact commands and outcomes.
-- [ ] Never say tests passed unless actually executed.
-
-### 5. Review and report
-- [ ] Review diff for unintended live execution, credential exposure, look-ahead, and permissive defaults.
-- [ ] Summarize changed files and behavior.
-- [ ] State tests actually run and any that were not run.
-- [ ] List assumptions, limitations, and remaining risks.
-- [ ] Provide exact run/verification steps.
-- [ ] Clearly mark implemented versus proposed follow-up work.
+Use `checklist.md` for every non-trivial task and state N/A where not applicable. The minimum workflow is: understand request and scope; define criteria and failure behavior; plan; implement smallest testable change; run relevant tests; review live paths/secrets/leakage/portfolio limits; update docs; report actual results and limitations.
 
 ## Required response format
 
-For substantial tasks, respond in the user's language using these headings:
-
-1. **Risultato** — concise outcome and scope.
-2. **Modifiche** — files/components and what changed.
-3. **Sicurezza e rischio** — paper/sandbox status, risk controls, and relevant limitations.
-4. **Verifica** — exact test/check commands run and results; state if none were run.
-5. **Uso** — commands or steps to reproduce.
-6. **Da completare** — unresolved assumptions, provider docs needed, or future work; omit only when genuinely none.
-
-Do not label a feature “live-ready”, “production-ready”, or “profitable” based on a prototype or backtest.
+For substantial tasks, respond in the user's language using `output-template.md`: Result, Changes, Safety & risk, Verification, Usage, Limitations/next steps. Distinguish implemented, tested, simulated and proposed functionality. Never label a prototype “live-ready”, “production-ready” or “profitable”.
 
 ## Supporting references
-
-Read only the reference relevant to the task, then follow this main skill:
 
 - `checklist.md` — copyable task checklist.
 - `architecture.md` — boundaries and system design.
 - `quant-research.md` — hypothesis, backtest, validation, and ML/LLM workflow.
+- `ml-feature-engineering.md` — point-in-time feature and model validation.
 - `portfolio-risk.md` — portfolio risk controls and test invariants.
+- `strategy-intraday.md` — signals, stop, target, breakeven and OHLC assumptions.
 - `broker-sandbox.md` — provider-neutral mock/sandbox adapter requirements.
 - `dashboard.md` — chart and reporting requirements.
+- `app-vs-expert-advisor.md` — architecture recommendation.
+- `prompts/` — initial prompt and system/project/compact instructions for Claude.
 - `output-template.md` — standard completion report.

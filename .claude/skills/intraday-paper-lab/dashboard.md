@@ -1,24 +1,21 @@
-# Dashboard e grafici
+# Dashboard performance completa — requisiti
 
-## Vista minima
+## Pagine/viste
 
-- Equity curve con capitale/allocazione e periodo chiaramente indicati.
-- Drawdown curve e massimo drawdown con definizione dichiarata.
-- PnL netto/lordo e costi; metriche campione (numero trade e barre).
-- Breakdown per simbolo, sessione/giorno, direzione e regime se disponibile.
-- Distribuzione PnL/trade, esposizione, turnover e tabella trade.
-- Benchmark solo se dataset e metodologia sono compatibili.
+1. **Overview**: capitale iniziale/finale, PnL netto e lordo, costi, return non annualizzato o annualizzazione motivata, trade count, win rate, expectancy, profit factor e stato dataset.
+2. **Equity & drawdown**: equity realizzata e mark-to-market separate; drawdown in valore/% con frequenza e formula dichiarata; underwater chart.
+3. **Trade analysis**: distribuzione PnL/R, holding time, long/short, cause exit (stop, target, breakeven, time), MFE/MAE se dati disponibili; nessuna MFE/MAE inventata da soli fill.
+4. **Portfolio**: esposizione lorda/netta, utilizzo capitale, rischio aperto, PnL e concentrazione per simbolo/settore/regime, correlazioni solo con dati sufficienti.
+5. **Sessione e costi**: breakdown per giorno/ora, fees, spread/slippage modellati e sensitivity.
+6. **Data/research audit**: sorgente, timezone, periodo, coverage, barre mancanti, config/commit/strategia, split e benchmark.
 
-## Regole
+## Definizioni
 
-- Distingui realized e mark-to-market equity. Non inventare mark-to-market se manca la serie prezzi.
-- Usa timestamp cronologici, timezone esplicita e gap visibili/non fuorvianti.
-- Visualizza strategia/config version, fonte e intervallo dati, assunzioni fees/slippage e metodologia di allocazione.
-- Mostra avviso per campione ridotto, dati mancanti o metriche non calcolabili.
-- Gestisci zero trade, dataset vuoto, un asset, molti asset, timestamp invalidi e upload grande.
-- Grafici descrittivi, senza call to action, previsioni o raccomandazioni.
-- Non esporre token/account IDs o dati personali nei grafici, export o log.
+- Indicare chiaramente realized vs MTM e prezzi/valutazioni usati.
+- Il breakeven è categoria di uscita separata: stop a entry non significa PnL netto zero dopo commissioni, spread o slippage.
+- Equity cumulata deve rispettare la metodologia di allocazione del backtest; non sommare subaccount come capitale duplicato.
+- Non annualizzare se periodo/cadenza non è affidabile.
 
-## Test UI
+## UX, sicurezza e test
 
-Fixture note con equity/PnL attesi; dataset vuoto e no-trade; timezone e session boundaries; download CSV senza colonne segrete; errori di schema mostrati senza crash.
+Filtri data/asset/sessione devono essere trasparenti e non alterare i dati sorgente. Mostrare avvisi per pochi trade, dati incompleti e metriche non calcolabili. Zero trade, un trade, null, timezone, valori estremi e file grandi devono essere gestiti. Export solo di dati necessari, mai segreti/identificativi account. Testare le metriche con fixture calcolabili a mano e mantenere grafici descrittivi, senza consigli di acquisto/vendita.
